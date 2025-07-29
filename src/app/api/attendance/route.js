@@ -3,6 +3,137 @@ import dbConnect from '@/lib/dbConnect'
 import Attendance from '@/lib/models/Attendance'
 import Member from '@/lib/models/Member'
 
+// POST method for saving attendance data
+export async function POST(request) {
+  try {
+    console.log('Attendance POST API: Starting request')
+    await dbConnect()
+    console.log('Attendance POST API: Database connected')
+    
+    const body = await request.json()
+    const { date, attendanceRecords } = body
+    console.log('Attendance POST API: Received data', { date, recordsCount: attendanceRecords?.length })
+    
+    // Validation
+    if (!date || !attendanceRecords || !Array.isArray(attendanceRecords)) {
+      return NextResponse.json(
+        { message: 'Date and attendanceRecords array are required' },
+        { status: 400 }
+      )
+    }
+    
+    if (attendanceRecords.length === 0) {
+      return NextResponse.json(
+        { message: 'At least one attendance record is required' },
+        { status: 400 }
+      )
+    }
+    
+    // Parse and normalize the date
+    const attendanceDate = new Date(date)
+    if (isNaN(attendanceDate.getTime())) {
+      return NextResponse.json(
+        { message: 'Invalid date format' },
+        { status: 400 }
+      )
+    }
+    
+    // Normalize to start of day in UTC
+    const normalizedDate = new Date(Date.UTC(
+      attendanceDate.getFullYear(),
+      attendanceDate.getMonth(),
+      attendanceDate.getDate()
+    ))
+    
+    console.log('Attendance POST API: Normalized date', normalizedDate)
+    
+    // Validate member IDs exist
+    const memberIds = attendanceRecords.map(record => record.memberId)
+    const existingMembers = await Member.find({ _id: { $in: memberIds } })
+    
+    if (existingMembers.length !== memberIds.length) {
+      return NextResponse.json(
+        { message: 'Some member IDs are invalid' },
+        { status: 400 }
+      )
+    }
+    
+    console.log('Attendance POST API: All members validated')
+    
+    // Process attendance records
+    const updateOperations = []
+    let processedCount = 0
+    
+    for (const record of attendanceRecords) {
+      const { memberId, status } = record
+      
+      // Validate status
+      if (!['Present', 'Absent'].includes(status)) {
+        console.log(`Invalid status for member ${memberId}: ${status}`)
+        continue
+      }
+      
+      // Use upsert to create or update attendance record
+      updateOperations.push({
+        updateOne: {
+          filter: {
+            memberId: memberId,
+            date: normalizedDate
+          },
+          update: {
+            $set: {
+              memberId: memberId,
+              date: normalizedDate,
+              status: status,
+              updatedAt: new Date()
+            },
+            $setOnInsert: {
+              createdAt: new Date()
+            }
+          },
+          upsert: true
+        }
+      })
+      
+      processedCount++
+    }
+    
+    console.log('Attendance POST API: Prepared operations', updateOperations.length)
+    
+    // Execute bulk operations
+    if (updateOperations.length > 0) {
+      const result = await Attendance.bulkWrite(updateOperations)
+      console.log('Attendance POST API: Bulk write result', result)
+      
+      return NextResponse.json({
+        message: 'Attendance saved successfully',
+        totalProcessed: processedCount,
+        upsertedCount: result.upsertedCount,
+        modifiedCount: result.modifiedCount,
+        date: normalizedDate.toISOString().split('T')[0]
+      })
+    } else {
+      return NextResponse.json(
+        { message: 'No valid attendance records to process' },
+        { status: 400 }
+      )
+    }
+    
+  } catch (error) {
+    console.error('Attendance POST API: Error', error)
+    console.error('Attendance POST API: Error stack', error.stack)
+    return NextResponse.json(
+      { 
+        message: 'Failed to save attendance', 
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// GET method for fetching reports (existing code)
 export async function GET(request) {
   try {
     console.log('Reports API: Starting request')
@@ -73,16 +204,23 @@ export async function GET(request) {
     
     console.log('Reports API: Initializing member summary')
     // Initialize member summary
-    allMembers.forEach(member => {
-      memberAttendanceSummary[member._id.toString()] = {
-        memberId: member._id,
-        memberIdField: member.memberId, // Add the custom memberId field
-        name: member.name,
-        presentDays: 0,
-        absentDays: 0,
-        totalTrackedDays: 0
-      }
-    })
+   allMembers.forEach(member => {
+  // Log to debug what we're getting from the member object
+  console.log('Member data:', { 
+    _id: member._id, 
+    memberId: member.memberId, 
+    name: member.name 
+  })
+  
+  memberAttendanceSummary[member._id.toString()] = {
+    // Use the custom memberId field from the schema (this should be a string like "EMP001")
+    memberId: member.memberId, // This is the custom member ID from your Member schema
+    name: member.name,
+    presentDays: 0,
+    absentDays: 0,
+    totalTrackedDays: 0
+  }
+})
     
     console.log('Reports API: Grouping attendance by date')
     // Group attendance by date
