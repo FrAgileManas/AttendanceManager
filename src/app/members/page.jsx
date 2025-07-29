@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Edit, Trash2, Users } from 'lucide-react'
+import { Plus, Edit, Trash2, Users, Calendar } from 'lucide-react'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import Loader from '../../components/Loader'
 
@@ -201,14 +201,23 @@ export default function MembersPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
                         <Link
+                          href={`/members/${member._id}/attendance`}
+                          className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded"
+                          title="Update Attendance"
+                        >
+                          <Calendar className="w-4 h-4" />
+                        </Link>
+                        <Link
                           href={`/members/${member._id}`}
                           className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                          title="Edit Member"
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
                         <button
                           onClick={() => setDeleteConfirm({ open: true, member })}
                           className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                          title="Delete Member"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -235,14 +244,23 @@ export default function MembersPage() {
                   </div>
                   <div className="flex space-x-2">
                     <Link
+                      href={`/members/${member._id}/attendance`}
+                      className="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded"
+                      title="Update Attendance"
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </Link>
+                    <Link
                       href={`/members/${member._id}`}
-                      className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                      className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded"
+                      title="Edit Member"
                     >
                       <Edit className="w-4 h-4" />
                     </Link>
                     <button
                       onClick={() => setDeleteConfirm({ open: true, member })}
-                      className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                      className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded"
+                      title="Delete Member"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -257,6 +275,22 @@ export default function MembersPage() {
                     month: 'short',
                     day: 'numeric'
                   })}
+                </div>
+                <div className="mt-3 flex space-x-2">
+                  <Link
+                    href={`/members/${member._id}/attendance`}
+                    className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100"
+                  >
+                    <Calendar className="w-4 h-4 mr-1" />
+                    Attendance
+                  </Link>
+                  <Link
+                    href={`/members/${member._id}`}
+                    className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100"
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    Edit
+                  </Link>
                 </div>
               </div>
             ))}
