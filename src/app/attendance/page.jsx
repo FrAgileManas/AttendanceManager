@@ -57,7 +57,11 @@ export default function AttendanceMarkingPage() {
       // Create attendance data object with existing records
       const attendanceMap = {}
       existingAttendance.forEach(record => {
-        attendanceMap[record.memberId._id] = record.status
+        // FIX: Add a check to ensure record.memberId is not null
+        // This prevents an error if a member was deleted but their attendance record still exists.
+        if (record.memberId && record.memberId._id) {
+          attendanceMap[record.memberId._id] = record.status
+        }
       })
       
       // Set default status for members without records

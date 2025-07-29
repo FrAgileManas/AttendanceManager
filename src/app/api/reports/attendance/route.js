@@ -64,7 +64,7 @@ export async function GET(request) {
     // Get attendance records for the date range
     const attendanceRecords = await Attendance.find({
       date: { $gte: start, $lte: end }
-    }).populate('memberId', 'name').sort({ date: 1 })
+    }).populate('memberId', 'name memberId').sort({ date: 1 }) // FIX: Added memberId to populate
     console.log('Reports API: Found attendance records', attendanceRecords.length)
     
     // Calculate overall attendance rate
@@ -75,7 +75,7 @@ export async function GET(request) {
     // Initialize member summary
     allMembers.forEach(member => {
       memberAttendanceSummary[member._id.toString()] = {
-        memberId: member._id,
+        memberId: member.memberId, // FIX: Use the custom memberId
         name: member.name,
         presentDays: 0,
         absentDays: 0,

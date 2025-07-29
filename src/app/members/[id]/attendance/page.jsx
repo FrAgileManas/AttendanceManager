@@ -75,26 +75,31 @@ export default function MemberAttendancePage() {
     }
   }
 
-  const fetchAttendanceForDate = async (date) => {
+   const fetchAttendanceForDate = async (date) => {
     try {
       const dateStr = format(date, 'yyyy-MM-dd')
       const response = await fetch(`/api/attendance/${dateStr}`)
       
       if (response.ok) {
         const existingAttendance = await response.json()
+        
+        // Find the record for the specific member
         const memberRecord = existingAttendance.find(
-          record => record.memberId._id === memberId
+          // FIX: Add a check to ensure record.memberId is not null
+          record => record.memberId && record.memberId._id === memberId
         )
         
         setAttendanceStatus(memberRecord ? memberRecord.status : 'Absent')
       } else {
+        // If the fetch fails or no data is found, default to 'Absent'
         setAttendanceStatus('Absent')
       }
     } catch (error) {
       console.error('Failed to fetch attendance for date:', error)
-      setAttendanceStatus('Absent')
+      setAttendanceStatus('Absent') // Default on error
     }
   }
+
 
   const handleSaveAttendance = async () => {
     setSaving(true)
