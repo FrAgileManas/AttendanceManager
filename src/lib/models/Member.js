@@ -4,8 +4,7 @@ const memberSchema = new mongoose.Schema({
   memberId: {
     type: String,
     required: [true, 'Member ID is required'],
-    // This 'unique' property automatically creates an index.
-    unique: [true, 'Member ID must be unique'],
+    unique: true, // This automatically creates an index, so we don't need schema.index()
     trim: true
   },
   name: {
@@ -25,8 +24,7 @@ const memberSchema = new mongoose.Schema({
   }
 })
 
-
+// Only add index for name, memberId already has unique index
 memberSchema.index({ name: 1 })
-
 
 export default mongoose.models.Member || mongoose.model('Member', memberSchema)

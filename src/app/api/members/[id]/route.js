@@ -29,7 +29,6 @@ export async function PUT(request, { params }) {
     await dbConnect()
     const body = await request.json()
     const { id } = await params
-    // Destructure memberId and name from the body
     const { name, memberId } = body
 
     // Validation
@@ -47,7 +46,6 @@ export async function PUT(request, { params }) {
       )
     }
 
-    // Add validation for memberId
     if (!memberId || !memberId.trim()) {
       return NextResponse.json(
         { message: 'Member ID is required' },
@@ -55,12 +53,11 @@ export async function PUT(request, { params }) {
       )
     }
 
-
     const member = await Member.findByIdAndUpdate(
       id,
       {
         name: name.trim(),
-        memberId: memberId.trim(), // Add memberId to the update
+        memberId: memberId.trim(),
         updatedAt: new Date()
       },
       { new: true, runValidators: true }
@@ -76,15 +73,21 @@ export async function PUT(request, { params }) {
     return NextResponse.json(member)
   } catch (error) {
     if (error.code === 11000) {
-        // More specific error message for unique fields
-        if (error.keyPattern.memberId) {
-            return NextResponse.json(
-              { message: 'A member with this Member ID already exists' },
-              { status: 400 }
-            )
-          }
+      // Handle duplicate key errors
+      if (error.keyPattern?.memberId) {
+        return NextResponse.json(
+          { message: 'A member with this Member ID already exists' },
+          { status: 400 }
+        )
+      }
+      if (error.keyPattern?.name) {
+        return NextResponse.json(
+          { message: 'A member with this name already exists' },
+          { status: 400 }
+        )
+      }
       return NextResponse.json(
-        { message: 'A member with this name already exists' },
+        { message: 'Duplicate entry detected' },
         { status: 400 }
       )
     }

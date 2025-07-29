@@ -309,6 +309,10 @@ export default function AttendanceMarkingPage() {
                         <h3 className="font-medium text-gray-900 text-sm sm:text-base">
                           {member.name}
                         </h3>
+                        {/* Display Member ID */}
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          ID: {member.memberId}
+                        </p>
                       </div>
                     </div>
                     

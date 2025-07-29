@@ -27,10 +27,10 @@ export async function GET(request, { params }) {
       )
     }
     
-    // Fetch attendance records for the date with member details
+    // Fetch attendance records for the date with member details (including memberId)
     const attendanceRecords = await Attendance.find({ 
       date: attendanceDate 
-    }).populate('memberId', 'name').sort({ 'memberId.name': 1 })
+    }).populate('memberId', 'name memberId').sort({ 'memberId.name': 1 })
     
     return NextResponse.json(attendanceRecords)
   } catch (error) {

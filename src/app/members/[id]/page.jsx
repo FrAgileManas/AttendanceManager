@@ -10,24 +10,27 @@ export default function MemberFormPage() {
   const params = useParams()
   const isEditing = params.id !== 'new'
   
- const [formData, setFormData] = useState({ name: '', memberId: '' })
+  const [formData, setFormData] = useState({ name: '', memberId: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [validationError, setValidationError] = useState({ name: '', memberId: '' }) 
+  const [validationError, setValidationError] = useState({ name: '', memberId: '' })
+
   useEffect(() => {
     if (isEditing) {
       fetchMember()
     }
   }, [isEditing])
 
- const fetchMember = async () => {
+  const fetchMember = async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/members/${params.id}`)
       if (!response.ok) throw new Error('Member not found')
       const member = await response.json()
-      // Set both name and memberId
-      setFormData({ name: member.name, memberId: member.memberId })
+      setFormData({ 
+        name: member.name || '', 
+        memberId: member.memberId || '' 
+      })
     } catch (err) {
       setError('Failed to load member details')
     } finally {
@@ -36,27 +39,27 @@ export default function MemberFormPage() {
   }
 
   const validateForm = () => {
-    let errors = { name: '', memberId: '' };
-    let isValid = true;
+    let errors = { name: '', memberId: '' }
+    let isValid = true
 
     if (!formData.name.trim()) {
-      errors.name = 'Name is required';
-      isValid = false;
+      errors.name = 'Name is required'
+      isValid = false
     } else if (formData.name.trim().length > 100) {
-      errors.name = 'Name must be less than 100 characters';
-      isValid = false;
+      errors.name = 'Name must be less than 100 characters'
+      isValid = false
     }
 
     if (!formData.memberId.trim()) {
-      errors.memberId = 'Member ID is required';
-      isValid = false;
+      errors.memberId = 'Member ID is required'
+      isValid = false
     }
 
-    setValidationError(errors);
-    return isValid;
+    setValidationError(errors)
+    return isValid
   }
 
- const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (!validateForm()) return
@@ -71,8 +74,10 @@ export default function MemberFormPage() {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        // Send both name and memberId
-        body: JSON.stringify({ name: formData.name.trim(), memberId: formData.memberId.trim() })
+        body: JSON.stringify({ 
+          name: formData.name.trim(), 
+          memberId: formData.memberId.trim() 
+        })
       })
 
       if (!response.ok) {
@@ -87,10 +92,13 @@ export default function MemberFormPage() {
       setLoading(false)
     }
   }
- const handleInputChange = (e) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
-    if (validationError[id]) setValidationError(prev => ({ ...prev, [id]: '' }));
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target
+    setFormData(prev => ({ ...prev, [id]: value }))
+    if (validationError[id]) {
+      setValidationError(prev => ({ ...prev, [id]: '' }))
+    }
   }
 
   if (loading && isEditing) {
@@ -164,6 +172,7 @@ export default function MemberFormPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Name Field */}
               <div>
                 <label 
                   htmlFor="name" 
@@ -192,7 +201,21 @@ export default function MemberFormPage() {
                     </span>
                   </div>
                 </div>
-                <div>
+                {validationError.name && (
+                  <div className="mt-2 flex items-center">
+                    <svg className="h-4 w-4 text-red-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-sm text-red-600">{validationError.name}</p>
+                  </div>
+                )}
+                <p className="mt-2 text-xs sm:text-sm text-gray-500">
+                  This will be used to identify the member in attendance records.
+                </p>
+              </div>
+
+              {/* Member ID Field */}
+              <div>
                 <label
                   htmlFor="memberId"
                   className="block text-sm font-semibold text-gray-900 mb-3"
@@ -216,24 +239,14 @@ export default function MemberFormPage() {
                 </div>
                 {validationError.memberId && (
                   <div className="mt-2 flex items-center">
-                    {/* ... validation error icon ... */}
+                    <svg className="h-4 w-4 text-red-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
                     <p className="text-sm text-red-600">{validationError.memberId}</p>
                   </div>
                 )}
                 <p className="mt-2 text-xs sm:text-sm text-gray-500">
                   This is a unique identifier for the member.
-                </p>
-              </div>
-                {validationError.name && (
-                  <div className="mt-2 flex items-center">
-                    <svg className="h-4 w-4 text-red-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <p className="text-sm text-red-600">{validationError.name}</p>
-                  </div>
-                )}
-                <p className="mt-2 text-xs sm:text-sm text-gray-500">
-                  This will be used to identify the member in attendance records.
                 </p>
               </div>
 
@@ -242,7 +255,7 @@ export default function MemberFormPage() {
                 <div className="flex flex-col sm:flex-row-reverse gap-3 sm:gap-4">
                   <button
                     type="submit"
-                    disabled={loading || !formData.name.trim()}
+                    disabled={loading || !formData.name.trim() || !formData.memberId.trim()}
                     className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     {loading ? (
