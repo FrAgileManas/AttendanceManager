@@ -17,10 +17,11 @@ export default function MembersPage() {
     fetchMembers()
   }, [])
 
-  // Filter members based on search term (name only)
-  useEffect(() => {
+  // Filter members based on search term (name and id)
+ useEffect(() => {
     const filtered = members.filter(member =>
-      member.name.toLowerCase().includes(searchTerm.toLowerCase())
+      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (member.memberId && member.memberId.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     setFilteredMembers(filtered)
   }, [members, searchTerm])
@@ -92,7 +93,8 @@ export default function MembersPage() {
         <div className="relative">
           <input
             type="text"
-            placeholder="Search members by name..."
+            // Update placeholder
+            placeholder="Search members by name or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -161,6 +163,9 @@ export default function MembersPage() {
                     Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Member ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Added On
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -182,6 +187,9 @@ export default function MembersPage() {
                           <div className="text-sm font-medium text-gray-900">{member.name}</div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {member.memberId}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(member.createdAt).toLocaleDateString('en-US', {
@@ -239,6 +247,9 @@ export default function MembersPage() {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
+                </div>
+                <div className="mt-2 text-xs text-gray-500">
+                  ID: {member.memberId}
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
                   Added {new Date(member.createdAt).toLocaleDateString('en-US', {

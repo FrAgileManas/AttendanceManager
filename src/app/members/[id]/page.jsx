@@ -10,24 +10,24 @@ export default function MemberFormPage() {
   const params = useParams()
   const isEditing = params.id !== 'new'
   
-  const [formData, setFormData] = useState({ name: '' })
+ const [formData, setFormData] = useState({ name: '', memberId: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [validationError, setValidationError] = useState('')
-
+  const [validationError, setValidationError] = useState({ name: '', memberId: '' }) 
   useEffect(() => {
     if (isEditing) {
       fetchMember()
     }
   }, [isEditing])
 
-  const fetchMember = async () => {
+ const fetchMember = async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/members/${params.id}`)
       if (!response.ok) throw new Error('Member not found')
       const member = await response.json()
-      setFormData({ name: member.name })
+      // Set both name and memberId
+      setFormData({ name: member.name, memberId: member.memberId })
     } catch (err) {
       setError('Failed to load member details')
     } finally {
@@ -36,21 +36,29 @@ export default function MemberFormPage() {
   }
 
   const validateForm = () => {
+    let errors = { name: '', memberId: '' };
+    let isValid = true;
+
     if (!formData.name.trim()) {
-      setValidationError('Name is required')
-      return false
+      errors.name = 'Name is required';
+      isValid = false;
+    } else if (formData.name.trim().length > 100) {
+      errors.name = 'Name must be less than 100 characters';
+      isValid = false;
     }
-    if (formData.name.trim().length > 100) {
-      setValidationError('Name must be less than 100 characters')
-      return false
+
+    if (!formData.memberId.trim()) {
+      errors.memberId = 'Member ID is required';
+      isValid = false;
     }
-    setValidationError('')
-    return true
+
+    setValidationError(errors);
+    return isValid;
   }
 
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
 
     try {
@@ -59,11 +67,12 @@ export default function MemberFormPage() {
 
       const url = isEditing ? `/api/members/${params.id}` : '/api/members'
       const method = isEditing ? 'PUT' : 'POST'
-      
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: formData.name.trim() })
+        // Send both name and memberId
+        body: JSON.stringify({ name: formData.name.trim(), memberId: formData.memberId.trim() })
       })
 
       if (!response.ok) {
@@ -78,10 +87,10 @@ export default function MemberFormPage() {
       setLoading(false)
     }
   }
-
-  const handleInputChange = (e) => {
-    setFormData({ name: e.target.value })
-    if (validationError) setValidationError('')
+ const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+    if (validationError[id]) setValidationError(prev => ({ ...prev, [id]: '' }));
   }
 
   if (loading && isEditing) {
@@ -169,7 +178,7 @@ export default function MemberFormPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
-                      validationError 
+                      validationError.name 
                         ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-200' 
                         : 'border-gray-300 focus:border-blue-500 bg-white hover:border-gray-400'
                     }`}
@@ -183,12 +192,44 @@ export default function MemberFormPage() {
                     </span>
                   </div>
                 </div>
-                {validationError && (
+                <div>
+                <label
+                  htmlFor="memberId"
+                  className="block text-sm font-semibold text-gray-900 mb-3"
+                >
+                  Member ID <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="memberId"
+                    type="text"
+                    value={formData.memberId}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                      validationError.memberId
+                        ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-200'
+                        : 'border-gray-300 focus:border-blue-500 bg-white hover:border-gray-400'
+                    }`}
+                    placeholder="Enter unique member ID"
+                    required
+                  />
+                </div>
+                {validationError.memberId && (
+                  <div className="mt-2 flex items-center">
+                    {/* ... validation error icon ... */}
+                    <p className="text-sm text-red-600">{validationError.memberId}</p>
+                  </div>
+                )}
+                <p className="mt-2 text-xs sm:text-sm text-gray-500">
+                  This is a unique identifier for the member.
+                </p>
+              </div>
+                {validationError.name && (
                   <div className="mt-2 flex items-center">
                     <svg className="h-4 w-4 text-red-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
-                    <p className="text-sm text-red-600">{validationError}</p>
+                    <p className="text-sm text-red-600">{validationError.name}</p>
                   </div>
                 )}
                 <p className="mt-2 text-xs sm:text-sm text-gray-500">

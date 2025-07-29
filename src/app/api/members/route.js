@@ -19,9 +19,10 @@ export async function POST(request) {
   try {
     await dbConnect()
     const body = await request.json()
-    
-    const { name } = body
-    
+
+    // Destructure memberId from the body
+    const { name, memberId } = body
+
     // Validation
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -29,7 +30,16 @@ export async function POST(request) {
         { status: 400 }
       )
     }
-    
+
+    // Add validation for memberId
+    if (!memberId || !memberId.trim()) {
+      return NextResponse.json(
+        { message: 'Member ID is required' },
+        { status: 400 }
+      )
+    }
+
+
     if (name.trim().length > 100) {
       return NextResponse.json(
         { message: 'Name must be less than 100 characters' },
@@ -38,19 +48,27 @@ export async function POST(request) {
     }
 
     const member = new Member({
-      name: name.trim()
+      name: name.trim(),
+      memberId: memberId.trim() // Add memberId here
     })
 
     await member.save()
     return NextResponse.json(member, { status: 201 })
   } catch (error) {
     if (error.code === 11000) {
+      // More specific error message for unique fields
+      if (error.keyPattern.memberId) {
+        return NextResponse.json(
+          { message: 'A member with this Member ID already exists' },
+          { status: 400 }
+        )
+      }
       return NextResponse.json(
         { message: 'A member with this name already exists' },
         { status: 400 }
       )
     }
-    
+
     return NextResponse.json(
       { message: 'Failed to create member', error: error.message },
       { status: 500 }

@@ -1,6 +1,13 @@
 import mongoose from 'mongoose'
 
 const memberSchema = new mongoose.Schema({
+  memberId: {
+    type: String,
+    required: [true, 'Member ID is required'],
+    // This 'unique' property automatically creates an index.
+    unique: [true, 'Member ID must be unique'],
+    trim: true
+  },
   name: {
     type: String,
     required: [true, 'Name is required'],
@@ -18,13 +25,8 @@ const memberSchema = new mongoose.Schema({
   }
 })
 
-// Update the updatedAt field before saving
-memberSchema.pre('save', function(next) {
-  this.updatedAt = Date.now()
-  next()
-})
 
-// Create index on name for faster queries
 memberSchema.index({ name: 1 })
+
 
 export default mongoose.models.Member || mongoose.model('Member', memberSchema)
