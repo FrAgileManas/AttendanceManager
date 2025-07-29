@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, Edit, Trash2, Users } from 'lucide-react'
@@ -8,6 +7,8 @@ import Loader from '../../components/Loader'
 
 export default function MembersPage() {
   const [members, setMembers] = useState([])
+  const [filteredMembers, setFilteredMembers] = useState([])
+  const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, member: null })
@@ -16,6 +17,14 @@ export default function MembersPage() {
     fetchMembers()
   }, [])
 
+  // Filter members based on search term (name only)
+  useEffect(() => {
+    const filtered = members.filter(member =>
+      member.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    setFilteredMembers(filtered)
+  }, [members, searchTerm])
+
   const fetchMembers = async () => {
     try {
       setLoading(true)
@@ -23,6 +32,7 @@ export default function MembersPage() {
       if (!response.ok) throw new Error('Failed to fetch members')
       const data = await response.json()
       setMembers(data)
+      setFilteredMembers(data) // Initialize filtered members
     } catch (err) {
       setError('Failed to load members. Please try again.')
     } finally {
@@ -37,7 +47,12 @@ export default function MembersPage() {
       })
       if (!response.ok) throw new Error('Failed to delete member')
       
-      setMembers(members.filter(m => m._id !== member._id))
+      const updatedMembers = members.filter(m => m._id !== member._id)
+      setMembers(updatedMembers)
+      // Update filtered members based on current search (name only)
+      setFilteredMembers(updatedMembers.filter(m =>
+        m.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ))
       setDeleteConfirm({ open: false, member: null })
     } catch (err) {
       setError('Failed to delete member. Please try again.')
@@ -49,87 +64,205 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Team Members</h1>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Team Members</h1>
+          <p className="text-gray-600">Manage your team members and their information</p>
+        </div>
         <Link
           href="/members/new"
           className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          <Plus size={18} className="mr-2" />
-          Add New Member
+          <Plus className="w-4 h-4 mr-2" />
+          Add Member
         </Link>
       </div>
 
+      {/* Error Message */}
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
 
-      {members.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
-          <Users size={48} className="mx-auto text-slate-400 mb-4" />
-          <h3 className="text-lg font-medium text-slate-600 mb-2">No members added yet</h3>
-          <p className="text-slate-500 mb-4">Click 'Add New Member' to get started.</p>
-          <Link
-            href="/members/new"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search members by name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <svg
+            className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <Plus size={18} className="mr-2" />
-            Add New Member
-          </Link>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+        {searchTerm && (
+          <p className="mt-2 text-sm text-gray-600">
+            Showing {filteredMembers.length} of {members.length} members
+          </p>
+        )}
+      </div>
+
+      {/* Members List */}
+      {filteredMembers.length === 0 && !searchTerm ? (
+        <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <Users className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No team members</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Get started by adding your first team member to begin tracking attendance.
+          </p>
+          <div className="mt-6">
+            <Link
+              href="/members/new"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Member
+            </Link>
+          </div>
+        </div>
+      ) : filteredMembers.length === 0 && searchTerm ? (
+        <div className="text-center py-12">
+          <Users className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No members found</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Try adjusting your search terms or clear the search to see all members.
+          </p>
+          <button
+            onClick={() => setSearchTerm('')}
+            className="mt-4 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          >
+            Clear search
+          </button>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-slate-600 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-slate-600 uppercase tracking-wider">
-                  Added On
-                </th>
-                <th className="px-6 py-3 text-right text-sm font-medium text-slate-600 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {members.map((member) => (
-                <tr key={member._id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                    {member.name}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    {new Date(member.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm">
-                    <div className="flex items-center justify-end space-x-2">
-                      <Link
-                        href={`/members/${member._id}`}
-                        className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-                      >
-                        <Edit size={14} className="mr-1" />
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => setDeleteConfirm({ open: true, member })}
-                        className="inline-flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
-                      >
-                        <Trash2 size={14} className="mr-1" />
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+        <div className="bg-white shadow rounded-lg">
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Added On
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredMembers.map((member) => (
+                  <tr key={member._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+                            {member.name.charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{member.name}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(member.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/members/${member._id}`}
+                          className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={() => setDeleteConfirm({ open: true, member })}
+                          className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4 p-4">
+            {filteredMembers.map((member) => (
+              <div key={member._id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+                      {member.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-gray-900">{member.name}</h3>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Link
+                      href={`/members/${member._id}`}
+                      className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Link>
+                    <button
+                      onClick={() => setDeleteConfirm({ open: true, member })}
+                      className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-2 text-xs text-gray-500">
+                  Added {new Date(member.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
+      {/* Member Count */}
+      <div className="mt-4 text-sm text-gray-500 text-center">
+        {searchTerm ? (
+          <>Showing {filteredMembers.length} of {members.length} members</>
+        ) : (
+          <>{members.length} {members.length === 1 ? 'member' : 'members'} total</>
+        )}
+      </div>
+
+      {/* Delete Confirmation Dialog - FIXED VERSION */}
       <ConfirmDialog
         open={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, member: null })}
